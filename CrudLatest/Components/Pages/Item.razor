@@ -1,0 +1,90 @@
+﻿@page "/items"
+@inject ItemService ItemService
+@inject IDialogService DialogService
+@using CrudLatest.Server.Services
+@using CrudLatest.Shared.Models  @* If using a shared project *@
+@using MudBlazor
+
+
+
+
+<MudContainer>  
+    <MudCard>
+        <MudCardContent>
+            <MudTable Items="@items" Dense="true">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Color</MudTh>
+                    <MudTh>Price</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="item">
+                    <MudTd>@item.Name</MudTd>
+                    <MudTd>@item.Color</MudTd>
+                    <MudTd>@item.Price.ToString("C")</MudTd>
+                    <MudTd>
+                        <MudButton OnClick="() => EditItem(item)">Edit</MudButton>
+                        <MudButton Color="Color.Error" OnClick="() => DeleteItem(item.Id)">Delete</MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+            <MudButton OnClick="AddItem">Add New Item</MudButton>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+<MudDialog @bind-IsOpen="isDialogOpen">
+    <MudDialogTitle>@(editingItem?.Id == null ? "Add Item" : "Edit Item")</MudDialogTitle>
+    <MudDialogContent>
+        <MudTextField @bind-Value="editingItem.Name" Label="Name" Required="true" />
+        <MudTextField @bind-Value="editingItem.Color" Label="Color" Required="true" />
+        <MudTextField @bind-Value="editingItem.Price" Label="Price" Required="true" />
+    </MudDialogContent>
+    <MudDialogActions>
+        <MudButton OnClick="SaveItem">Save</MudButton>
+        <MudButton OnClick="() => isDialogOpen = false">Cancel</MudButton>
+    </MudDialogActions>
+</MudDialog>
+
+@code {
+    private List<Item> items = new();
+    private bool isDialogOpen = false;
+    private Item editingItem = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        items = await ItemService.GetItemsAsync();
+    }
+
+    private void AddItem()
+    {
+        editingItem = new Item();
+        isDialogOpen = true;
+    }
+
+    private void EditItem(Item item)
+    {
+        editingItem = new Item { Id = item.Id, Name = item.Name, Color = item.Color, Price = item.Price };
+        isDialogOpen = true;
+    }
+
+    private async Task SaveItem()
+    {
+        if (editingItem.Id == null)
+        {
+            await ItemService.CreateItemAsync(editingItem);
+        }
+        else
+        {
+            await ItemService.UpdateItemAsync(editingItem.Id, editingItem);
+        }
+        items = await ItemService.GetItemsAsync();
+        isDialogOpen = false;
+    }
+
+    private async Task DeleteItem(string id)
+    {
+        await ItemService.DeleteItemAsync(id);
+        items = await ItemService.GetItemsAsync();
+    }
+}
