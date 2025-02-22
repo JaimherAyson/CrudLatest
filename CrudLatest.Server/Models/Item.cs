@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace CrudLatest.Server.Shared.Models
+namespace CrudLatest.Server.Models
 {
     public class Item
     {

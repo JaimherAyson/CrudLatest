@@ -1,90 +1,70 @@
 ﻿@page "/items"
-@inject ItemService ItemService
-@inject IDialogService DialogService
-@using CrudLatest.Server.Services
-@using CrudLatest.Shared.Models  @* If using a shared project *@
-@using MudBlazor
+@inject HttpClient Http
+@using CrudLatest.Shared.Models; // ✅ Import the Item model
 
 
 
+<h3>Item Management</h3>
 
-<MudContainer>  
-    <MudCard>
-        <MudCardContent>
-            <MudTable Items="@items" Dense="true">
-                <HeaderContent>
-                    <MudTh>Name</MudTh>
-                    <MudTh>Color</MudTh>
-                    <MudTh>Price</MudTh>
-                    <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate Context="item">
-                    <MudTd>@item.Name</MudTd>
-                    <MudTd>@item.Color</MudTd>
-                    <MudTd>@item.Price.ToString("C")</MudTd>
-                    <MudTd>
-                        <MudButton OnClick="() => EditItem(item)">Edit</MudButton>
-                        <MudButton Color="Color.Error" OnClick="() => DeleteItem(item.Id)">Delete</MudButton>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-            <MudButton OnClick="AddItem">Add New Item</MudButton>
-        </MudCardContent>
-    </MudCard>
-</MudContainer>
+<!-- Create Item Form -->
+<div>
+    <h4>Create Item</h4>
+    <input @bind="newItem.Name" placeholder="Item Name" />
+    <input @bind="newItem.Color" placeholder="Item Color" />
+    <input @bind="newItem.Price" type="number" placeholder="Item Price" />
+    <button @onclick="CreateItem">Add Item</button>
+</div>
 
-<MudDialog @bind-IsOpen="isDialogOpen">
-    <MudDialogTitle>@(editingItem?.Id == null ? "Add Item" : "Edit Item")</MudDialogTitle>
-    <MudDialogContent>
-        <MudTextField @bind-Value="editingItem.Name" Label="Name" Required="true" />
-        <MudTextField @bind-Value="editingItem.Color" Label="Color" Required="true" />
-        <MudTextField @bind-Value="editingItem.Price" Label="Price" Required="true" />
-    </MudDialogContent>
-    <MudDialogActions>
-        <MudButton OnClick="SaveItem">Save</MudButton>
-        <MudButton OnClick="() => isDialogOpen = false">Cancel</MudButton>
-    </MudDialogActions>
-</MudDialog>
+<!-- Items List -->
+<h4>Items List</h4>
+@if (items is null)
+{
+    <p>Loading items...</p>
+}
+else if (!items.Any())
+{
+    <p>No items found.</p>
+}
+else
+{
+    <ul>
+        @foreach (var item in items)
+        {
+            <li>
+                <strong>@item.Name</strong> - @item.Color - $@item.Price
+                <button @onclick="() => DeleteItem(item.Id)">Delete</button>
+            </li>
+        }
+    </ul>
+}
 
 @code {
     private List<Item> items = new();
-    private bool isDialogOpen = false;
-    private Item editingItem = new();
+    private Item newItem = new() { Name = "", Color = "", Price = 0 };
 
     protected override async Task OnInitializedAsync()
     {
-        items = await ItemService.GetItemsAsync();
+        await LoadItems();
     }
 
-    private void AddItem()
+    private async Task LoadItems()
     {
-        editingItem = new Item();
-        isDialogOpen = true;
+        items = await Http.GetFromJsonAsync<List<Item>>("api/items") ?? new List<Item>();
     }
 
-    private void EditItem(Item item)
+    private async Task CreateItem()
     {
-        editingItem = new Item { Id = item.Id, Name = item.Name, Color = item.Color, Price = item.Price };
-        isDialogOpen = true;
-    }
-
-    private async Task SaveItem()
-    {
-        if (editingItem.Id == null)
+        if (!string.IsNullOrWhiteSpace(newItem.Name))
         {
-            await ItemService.CreateItemAsync(editingItem);
+            await Http.PostAsJsonAsync("api/items", newItem);
+            newItem = new Item() { Name = "", Color = "", Price = 0 }; // Reset input
+            await LoadItems(); // Refresh list
         }
-        else
-        {
-            await ItemService.UpdateItemAsync(editingItem.Id, editingItem);
-        }
-        items = await ItemService.GetItemsAsync();
-        isDialogOpen = false;
     }
 
     private async Task DeleteItem(string id)
     {
-        await ItemService.DeleteItemAsync(id);
-        items = await ItemService.GetItemsAsync();
+        await Http.DeleteAsync($"api/items/{id}");
+        await LoadItems();
     }
 }

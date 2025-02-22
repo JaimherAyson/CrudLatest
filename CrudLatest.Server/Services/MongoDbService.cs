@@ -1,4 +1,5 @@
-﻿using CrudLatest.Server.Shared.Models;
+﻿using CrudLatest.Server.Models;
+using CrudLatest.Server.Shared.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using System.Collections.Generic;
@@ -32,7 +33,4 @@ namespace CrudLatest.Server.Services
         public async Task DeleteItemAsync(string id) =>
             await _itemsCollection.DeleteOneAsync(x => x.Id == id);
     }
-
-
-
 }

@@ -1,5 +1,4 @@
-﻿using CrudLatest.Server;
-using CrudLatest.Server.Services; // Ensure this matches your service namespace
+﻿using CrudLatest.Server.Services; // Ensure this matches your service namespace
 using CrudLatest.Server.Shared.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -8,21 +7,19 @@ using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔹 Load MongoDB settings FIRST
-builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
-
-// 🔹 Register MongoDB service
+// Register MongoDB service
 builder.Services.AddScoped<IMongoDbService, MongoDbService>();
 
-// 🔹 Register additional services
-builder.Services.AddSingleton<ItemService>(); // Ensure ItemService is correctly implemented
-
-// 🔹 Add controllers and API tools
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 🔹 Enable CORS (for Blazor to access the API)
+// Add MongoDB settings
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
+builder.Services.AddSingleton<MongoDbService>(); // Register MongoDbService
+
+// Enable CORS (for Blazor to access the API)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -33,17 +30,18 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// 🔹 Enable Swagger in development
+// Enable Swagger in development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// 🔹 Enable CORS
+// Enable CORS
 app.UseCors("AllowAll");
 
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

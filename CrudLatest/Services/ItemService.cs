@@ -2,7 +2,7 @@
 using System.Net.Http.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using CrudLatest.Server.Shared.Models;
+using CrudLatest.Server.Models;
 
 namespace CrudLatest.Services
 {
